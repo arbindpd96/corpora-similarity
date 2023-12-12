@@ -1,0 +1,2 @@
+EMBEDDINGS_MODEL = "text-embedding-ada-002"
+EMBEDDINGS_BATCH_SIZE = 1024  # up to 2048
