@@ -1,3 +1,4 @@
+import sys
 import os
 import pandas as pd
 import chromadb
@@ -6,6 +7,10 @@ from ast import literal_eval
 from chromadb.utils.embedding_functions import OpenAIEmbeddingFunction
 
 from config import EMBEDDINGS_MODEL
+
+# these three lines swap the stdlib sqlite3 lib with the pysqlite3 package
+__import__('pysqlite3')
+sys.modules['sqlite3'] = sys.modules.pop('pysqlite3')
 
 # Global variables
 embedding_function = OpenAIEmbeddingFunction(
