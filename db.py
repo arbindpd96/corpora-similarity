@@ -15,12 +15,14 @@ embedding_function = OpenAIEmbeddingFunction(
 )
 
 
-def init_db() -> None:
+def init_db():
 
     print("Loading data...")
     movies_df = pd.read_csv("./data/embeddings.csv")
+
+    movies_df['id'] = movies_df['id'].apply(str)
     movies_df["embedding"] = movies_df["embedding"].apply(literal_eval)
-    movies_df['ids'] = movies_df['ids'].apply(str)
+    movies_df["movie_features"] = movies_df["movie_features"].apply(literal_eval)
 
     # Create a client
     client = chromadb.EphemeralClient()
@@ -33,8 +35,8 @@ def init_db() -> None:
 
     print("Initializing database...")
 
-    ids = movies_df.ids.tolist()
-    embeddings = movies_df.embedding.tolist()
+    ids = movies_df.id.tolist()
+    embeddings = movies_df.movie_features.tolist()  # movies_df.embedding.tolist()
 
     # Add data to the database in baches. 
     # There is an undocumented limit in the API
@@ -50,6 +52,8 @@ def init_db() -> None:
 
 
 def query(collection, movies_df, query, max_results=10) -> pd.DataFrame:
+    print("Querying database...")
+
     results = collection.query(
         query_texts=query,
         n_results=max_results,
@@ -58,5 +62,5 @@ def query(collection, movies_df, query, max_results=10) -> pd.DataFrame:
 
     return pd.DataFrame({
         'score': results['distances'][0],
-        'title': movies_df[movies_df.ids.isin(results['ids'][0])]['titles']
+        'title': movies_df[movies_df.id.isin(results['ids'][0])]['title']
     })

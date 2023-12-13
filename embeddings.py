@@ -5,16 +5,18 @@ import pandas as pd
 
 from openai import OpenAI
 
-from config import EMBEDDINGS_MODEL, EMBEDDINGS_BATCH_SIZE
+from config import EMBEDDINGS_MODEL, EMBEDDINGS_BATCH_SIZE, prompt_extract
 from tornado.options import define, options
 
 define("movies_data", default=None, help="Movies db file", type=str)
 
+
 # Embeddings
 embeddings_data = {
-    "ids": [],
-    "titles": [],
-    "overview": []
+    "id": [],
+    "title": [],
+    "synopsis": [],
+    "movie_features": []
 }
 
 
@@ -41,28 +43,62 @@ def getEmbeddings(stringsArr: list):
     return embeddings
 
 
+def extract_movie_features(title: str, synopsis: str) -> str:
+    client = OpenAI()
+    response = client.chat.completions.create(
+        model="gpt-4-1106-preview",
+        messages=[
+            {
+                "role": "system",
+                "content": "You are a helpful movie connoisseur."
+            },
+            {
+                "role": "user",
+                "content": prompt_extract.format(title, synopsis)
+            },
+        ],
+        max_tokens=1024
+    )
+    return response.choices[0].message.content
+
+
 def process_item(row: dict) -> None:
     if not row['overview']:
         print(f"Skipping {row['id']} - {row['title']}")
         return
 
-    embeddings_data["ids"].append(row['id'])
-    embeddings_data["titles"].append(row['title'])
-    embeddings_data["overview"].append(row['overview'])
+    print(f"Processing {row['id']} - {row['title']}")
+
+    movie_features = extract_movie_features(
+        row['title'],
+        row['overview']
+    )
+
+    print(f"\tMovie features: {movie_features}")
+
+    embeddings_data["id"].append(row['id'])
+    embeddings_data["title"].append(row['title'])
+    embeddings_data["synopsis"].append(row['overview'])
+    embeddings_data["movie_features"].append(movie_features)
 
 
 def generate_embeddings(db_file) -> None:
     with open(db_file, 'r') as file:
         reader = csv.DictReader(file)
-        for row in reader:
+        # Read 10 lines
+        # for row in reader:
+        for _ in range(10):
+            row = next(reader)
             process_item(row)
 
-    df = pd.DataFrame({
-        "ids": embeddings_data["ids"],
-        "titles": embeddings_data["titles"],
-        "embedding": getEmbeddings(embeddings_data["overview"]),
-    })
+    proccessed_embeddings = {
+        "id": embeddings_data["id"],
+        "title": embeddings_data["title"],
+        "embedding": getEmbeddings(embeddings_data["synopsis"]),
+        "movie_features": getEmbeddings(embeddings_data["movie_features"])
+    }
 
+    df = pd.DataFrame(proccessed_embeddings)
     df.to_csv("./data/embeddings.csv", index=False)
 
 
