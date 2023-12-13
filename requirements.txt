@@ -3,4 +3,3 @@ numpy
 openai
 chromadb
 streamlit
-pysqlite3-binary
