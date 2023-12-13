@@ -7,7 +7,6 @@ from chromadb.utils.embedding_functions import OpenAIEmbeddingFunction
 
 from config import EMBEDDINGS_MODEL
 
-
 # Global variables
 embedding_function = OpenAIEmbeddingFunction(
     api_key=os.environ.get('OPENAI_API_KEY'),
