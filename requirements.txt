@@ -1,5 +1,5 @@
 wget
 numpy
 openai
-chromadb
 streamlit
+chromadb==0.3.29
