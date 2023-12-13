@@ -1,16 +1,7 @@
-import os
-import pandas as pd
-import chromadb
-
-from ast import literal_eval
-from chromadb.utils.embedding_functions import OpenAIEmbeddingFunction
-
-from config import EMBEDDINGS_MODEL
-
 import sqlite3
 
 if sqlite3.sqlite_version_info < (3, 35, 0):
-    # In Colab, hotswap to pysqlite-binary if it's too old
+    # hotswap to pysqlite-binary if it's too old
     import subprocess
     import sys
 
@@ -20,6 +11,14 @@ if sqlite3.sqlite_version_info < (3, 35, 0):
     __import__("pysqlite3")
     sys.modules["sqlite3"] = sys.modules.pop("pysqlite3")
 
+import os
+import pandas as pd
+import chromadb
+
+from ast import literal_eval
+from chromadb.utils.embedding_functions import OpenAIEmbeddingFunction
+
+from config import EMBEDDINGS_MODEL
 
 # Global variables
 embedding_function = OpenAIEmbeddingFunction(
