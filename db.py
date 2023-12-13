@@ -1,4 +1,3 @@
-import sys
 import os
 import pandas as pd
 import chromadb
@@ -8,9 +7,19 @@ from chromadb.utils.embedding_functions import OpenAIEmbeddingFunction
 
 from config import EMBEDDINGS_MODEL
 
-# these three lines swap the stdlib sqlite3 lib with the pysqlite3 package
-__import__('pysqlite3')
-sys.modules['sqlite3'] = sys.modules.pop('pysqlite3')
+import sqlite3
+
+if sqlite3.sqlite_version_info < (3, 35, 0):
+    # In Colab, hotswap to pysqlite-binary if it's too old
+    import subprocess
+    import sys
+
+    subprocess.check_call(
+        [sys.executable, "-m", "pip", "install", "pysqlite3-binary"]
+    )
+    __import__("pysqlite3")
+    sys.modules["sqlite3"] = sys.modules.pop("pysqlite3")
+
 
 # Global variables
 embedding_function = OpenAIEmbeddingFunction(
