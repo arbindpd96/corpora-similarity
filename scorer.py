@@ -50,6 +50,8 @@ if __name__ == "__main__":
 
     if st.button("Submit", key="inputSubmit"):        
         features = extract_movie_features(prompt)
+        st.write(features)
+
         result_df = query(collection, df, features)
 
         st.write(

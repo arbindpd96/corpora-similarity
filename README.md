@@ -25,3 +25,9 @@ python ./embeddings.py --movies_data='./file.csv'
 ```
 streamlit run ./scorer.py
 ```
+
+### TODO
+
+- Structure the features according to what is important for us (perhaps x genre) to qualify as original idea.
+- Data annotation / standardization. Its a challenge to get a great db for synopsis. We need some human labeling / reviewing
+- Customized model for these feature extractions

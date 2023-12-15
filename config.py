@@ -7,6 +7,7 @@ Extract the following features from the movie synopsis in about 850 characters:
 
 - Themes
 - Plot points
+- Sequence of events
 - Character archetypes
 - Other notable features
 
