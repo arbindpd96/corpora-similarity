@@ -1,0 +1,5 @@
+wget
+numpy
+openai
+chromadb
+streamlit
