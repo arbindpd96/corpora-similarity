@@ -4,7 +4,7 @@ from openai import OpenAI
 
 from config import EMBEDDINGS_MODEL, EMBEDDINGS_BATCH_SIZE
 
-client = OpenAI(api_key='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')
+client = OpenAI(api_key=os.environ.get('OPENAI_API_KEY'))
 
 
 def getEmbeddingsUsingOpenAi(stringsArr: list):
