@@ -1,11 +1,5 @@
 from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
 import numpy as np
-from sklearn.metrics.pairwise import cosine_similarity
-import csv
-import os
-
-import numpy as np
-import pandas as pd
 from openai import OpenAI
 from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
 
@@ -14,7 +8,6 @@ from tornado.options import define, options
 from sklearn.metrics.pairwise import cosine_similarity
 
 
-os.environ["OPENAI_API_KEY"] = 'OPENAI_KEY'
 
 
 

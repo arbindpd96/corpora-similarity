@@ -1,0 +1,10 @@
+# Default ignored files
+/shelf/
+/workspace.xml
+data/embeddings.csv
+data/file.csv
+corpora-similarity.iml
+misc.xml
+modules.xml
+vcs.xml
+.idea/

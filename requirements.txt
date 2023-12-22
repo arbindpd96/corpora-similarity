@@ -1,6 +1,13 @@
 wget
-numpy
-openai
-chromadb
-streamlit
+numpy~=1.26.0
+openai~=1.2.4
+chromadb~=0.4.20
+streamlit~=1.29.0
 pysqlite3-binary
+pandas~=2.1.1
+pytest~=7.4.3
+torch~=2.1.2
+transformers~=4.34.0
+vaderSentiment~=3.3.2
+scikit-learn~=1.3.2
+tornado~=6.4

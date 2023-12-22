@@ -16,7 +16,7 @@ embeddings_data = {
     "id": [],
     "title": [],
     "synopsis": [],
-    "movie_features": []
+    # "movie_features": []
 }
 
 
@@ -69,33 +69,31 @@ def process_item(row: dict) -> None:
 
     print(f"Processing {row['id']} - {row['title']}")
 
-    movie_features = extract_movie_features(
-        row['title'],
-        row['overview']
-    )
+    # movie_features = extract_movie_features(
+    #     row['title'],
+    #     row['overview']
+    # )
 
-    print(f"\tMovie features: {movie_features}")
+    # print(f"\tMovie features: {movie_features}")
 
     embeddings_data["id"].append(row['id'])
     embeddings_data["title"].append(row['title'])
     embeddings_data["synopsis"].append(row['overview'])
-    embeddings_data["movie_features"].append(movie_features)
+    # embeddings_data["movie_features"].append(movie_features)
 
 
 def generate_embeddings(db_file) -> None:
     with open(db_file, 'r') as file:
         reader = csv.DictReader(file)
-        # Read 10 lines
-        # for row in reader:
-        for _ in range(10):
-            row = next(reader)
+        for i, row in enumerate(reader):
+            print(f"processing {i} - {row['id']}, {row['title']}")
             process_item(row)
 
     proccessed_embeddings = {
         "id": embeddings_data["id"],
         "title": embeddings_data["title"],
         "embedding": getEmbeddings(embeddings_data["synopsis"]),
-        "movie_features": getEmbeddings(embeddings_data["movie_features"])
+        # "movie_features": getEmbeddings(embeddings_data["movie_features"])
     }
 
     df = pd.DataFrame(proccessed_embeddings)
@@ -104,5 +102,5 @@ def generate_embeddings(db_file) -> None:
 
 if __name__ == "__main__":
     options.parse_command_line()
-    generate_embeddings(options.movies_data)
+    generate_embeddings('data/file.csv')
     print("Done!")

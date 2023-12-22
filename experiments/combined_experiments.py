@@ -4,19 +4,18 @@ import os
 import numpy as np
 import pandas as pd
 import torch
+from huggingface_hub import snapshot_download
 from openai import OpenAI
 from sentence_transformers import SentenceTransformer
+from tensorflow_hub import KerasLayer
 from transformers import RobertaTokenizer, RobertaModel
 from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
 
 from config import EMBEDDINGS_MODEL, EMBEDDINGS_BATCH_SIZE
-from tornado.options import define, options
 from sklearn.metrics.pairwise import cosine_similarity
 
-os.environ["OPENAI_API_KEY"] = 'OPENAI_KEY'
-
 analyzer = SentimentIntensityAnalyzer()
-client = OpenAI()
+client = OpenAI(api_key=os.environ.get('OPENAI_API_KEY'))
 
 
 def getEmbeddingsUsingOpenAi(stringsArr: str):
@@ -26,12 +25,15 @@ def getEmbeddingsUsingOpenAi(stringsArr: str):
     )
     return response.data[0].embedding
 
-def getEmbeddingsUsingSentenceTransformers(inputStr : str) :
+
+def getEmbeddingsUsingSentenceTransformers(inputStr: str):
     model = SentenceTransformer('gtr-t5-xl')
     query_embedding = model.encode(inputStr)
+    print(query_embedding)
     return query_embedding
 
-def getEmbeddingUsingBert(input: str) :
+
+def getEmbeddingUsingBert(input: str):
     tokenizer = RobertaTokenizer.from_pretrained('roberta-base')
     model = RobertaModel.from_pretrained('roberta-base')
     encoded_input_1 = tokenizer(input, return_tensors='pt')
@@ -46,17 +48,21 @@ def getSentiment(str):
     return [vs['neg'], vs['neu'], vs['pos']]
 
 
-def infer_gpt_4(prompt):
+def infer_gpt_4(system_prompt, user_prompt):
     try:
         chat_completion = client.chat.completions.create(
             messages=[
                 {
+                    "role": "system",
+                    "content": system_prompt
+                },
+                {
                     "role": "user",
-                    "content": prompt,
+                    "content": user_prompt,
                 }
             ],
-            model="gpt-4",
-            temperature=0.3
+            model="gpt-4-1106-preview",
+            temperature=0.7
         )
 
         return chat_completion.choices[0].message.content
@@ -65,22 +71,61 @@ def infer_gpt_4(prompt):
 
 
 def getAttr(plot):
-    prompt2 = (
+
+    system_prompt = (
         "Act like a screenplay jury. breakdown the given story into 3parts. use the story as is to create these parts. use 3 act structure"
         f"do not make up anything. keeps words absolutely simple. Rewrite in a way that we can tell them apart from another story written in a similar way. and checked with cosine similarity of the vectors using embedding"
         "if the story is not linear rewrite in a linear manner. The plot is given below. Dont acknowledge. just respond with the 3 parts. Each part should be not more than 5 words"
-        "respond in a single line. comma separated. don't number them"
+        "respond in a single line, don't number them and keep it seperated with '.' "
         "remove actors,places, and proper nouns completely"
-        # "make the sentence in such a way that it should be short and showing emotion of the movie"
-        "\n"
-        f"{plot}"
     )
 
-    return infer_gpt_4(prompt2)
+    return infer_gpt_4(system_prompt=system_prompt, user_prompt=plot)
 
-def scaleTheOutput(calculatedPercentage : float) :
+
+def getFinalAnalysisReport(plot1, plot1_oneliner, plot2, plot2_oneliner, semanticAnalysisPercentage, sentimental1,
+                           sentimental2, overallPercentage):
+    system_prompt = (
+        "As a member of a screenwriter jury, evaluate two movie synopses based on their semantic and sentimental analysis results. Provide insights into their similarities and differences, categorized and explained clearly."
+        "Task: Compare and contrast two movie synopses."
+        "Respond strictly in below format"
+        "Similarities between the two plots:"
+        "<Similarity Category name>: Explanation of the similarity."
+        "<Similarity Category name>: Explanation of the similarity."
+        "..."
+        "(Continue listing all similarities with their respective categories and explanations.)"
+        "Differences between the two plots:"
+        "\n"
+        "<Difference Category name>: Explanation of the difference."
+        "<Difference Category name>: Explanation of the difference."
+        "..."
+        "(Continue listing all differences with their respective categories and explanations.)"
+        "if overall percentage is below or slightly above 50 then focus more on Differences then on Similarity. Lesser the number focus more on difference and more the number focus more on difference"
+        "keep the difference strictly on the basis of story and not on basis of character's specification"
+        "Don't use sentiment analysis and semantic analysis result as a comparison point use it as a context to plot differences and similarity"
+    )
+
+    user_prompt = (
+        "Plot1:\n"
+        f"{plot1}"
+        f"one line plot for sentiment analysis{plot1_oneliner}"
+        f"Sentiment analysis plot1 : {sentimental1}"
+        "\n"
+        "Plot2:\n"
+        f"{plot2}"
+        f"one line plot for sentiment analysis{plot2_oneliner}"
+        f"Sentiment analysis plot2 : {sentimental2}"
+        "\n"
+        f"Semantic Analysis result : {semanticAnalysisPercentage}"
+        f"overall similarity percentage : {overallPercentage}"
+    )
+
+    return infer_gpt_4(system_prompt=system_prompt, user_prompt=user_prompt)
+
+
+def scaleTheOutput(calculatedPercentage: float):
     scaledOutput = (calculatedPercentage - 50) / 0.5
-    if scaledOutput < 0 :
+    if scaledOutput < 0:
         return 0
     return scaledOutput
 
@@ -94,31 +139,37 @@ data_6 = "Ranbir sees his childhood friend after a long time Alia and falls in l
 
 
 def compare(plot1, plot2, casemessage):
-    str1 = getAttr(plot1)
-    str2 = getAttr(plot2)
+    attr1 = getAttr(plot1)
+    attr2 = getAttr(plot2)
 
-    vectorized_1 = getEmbeddingUsingBert(plot1)
-    vectorized_2 = getEmbeddingUsingBert(plot2)
-    print(f"shape {np.shape(vectorized_1)}")
-    print(f"shape {np.shape(vectorized_2)}")
+    vectorized_1 = getEmbeddingsUsingSentenceTransformers(plot1)
+    vectorized_2 = getEmbeddingsUsingSentenceTransformers(plot2)
 
-    sentiment1 = getSentiment(str1)
-    sentiment2 = getSentiment(str2)
+    sentiment1 = getSentiment(attr1)
+    sentiment2 = getSentiment(attr2)
 
     similarity = cosine_similarity([vectorized_1], [vectorized_2])
     similarity_percentage = similarity[0][0] * 100
     emotionSimilarity = (cosine_similarity([sentiment1], [sentiment2]))[0][0] * 100
-    avgOutput = ((emotionSimilarity * 2 ) + similarity_percentage ) / 3
+    avgOutput = ((emotionSimilarity) + similarity_percentage) / 2
+    scaledOutput = scaleTheOutput(avgOutput)
     print("***************")
-    print(str1)
-    print(str2)
+    print(attr1)
+    print(attr2)
+    print(f"sentiment 1: {sentiment1}")
+    print(f"sentiment 2: {sentiment2}")
+    print(f"shape {np.shape(vectorized_1)}")
+    print(f"shape {np.shape(vectorized_2)}")
     print("Test Case: ", casemessage)
     print(f"Similarity Percentage: {similarity_percentage}%")
     print(f"emotion similarity Percentage: {emotionSimilarity}%")
     print(f"averaged output percentage: {avgOutput}")
-    print(f"scaled output {scaleTheOutput(avgOutput)}")
+    print(f"scaled output {scaledOutput}")
+    # print( f"final analysis result \n \n \n {getFinalAnalysisReport(plot1=plot1, plot1_oneliner=attr1, plot2=plot2 , plot2_oneliner= attr2, semanticAnalysisPercentage=similarity_percentage, sentimental1=sentiment1, sentimental2=sentiment2, overallPercentage=scaledOutput)}")
+    print("***************")
 
 
-compare(data_1, data_2, "high")
-compare(data_3, data_4, "medium-high")
-compare(data_2, data_5, "low")
+# compare(data_1, data_2, "high")
+# compare(data_3, data_4, "medium-high")
+# compare(data_2, data_5, "low")
+compare(data_6, data_5, "very low")

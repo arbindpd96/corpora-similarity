@@ -10,7 +10,6 @@ from sklearn.metrics.pairwise import cosine_similarity
 
 from config import EMBEDDINGS_MODEL
 
-os.environ["OPENAI_API_KEY"] = 'OPENAI_KEY'
 
 # Global variables
 embedding_function = OpenAIEmbeddingFunction(
