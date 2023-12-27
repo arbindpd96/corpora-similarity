@@ -12,7 +12,7 @@ def getEmbeddings(stringsArr: list):
     client = OpenAI()
     embeddings = []
 
-    print("Creating embeddings...")
+    print("Creating embeddings_methods...")
     print(f"Total strings: {len(stringsArr)}")
 
     for batch_start in range(0, len(stringsArr), EMBEDDINGS_BATCH_SIZE):
@@ -53,7 +53,7 @@ if __name__ == "__main__":
         )
         df = pd.DataFrame({
             'text': prompt.split('\n'),
-            'embeddings': embeddings[1:]
+            'embeddings_methods': embeddings[1:]
         })
 
         df["similarity"] = df.embeddings.apply(

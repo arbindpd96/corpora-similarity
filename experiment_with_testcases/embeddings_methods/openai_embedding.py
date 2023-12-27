@@ -10,14 +10,9 @@ client = OpenAI(api_key=os.environ.get('OPENAI_API_KEY'))
 def getEmbeddingsUsingOpenAi(stringsArr: list):
     embeddings = []
 
-    print("Creating embeddings...")
-    print(f"Total strings: {len(stringsArr)}")
-
     for batch_start in range(0, len(stringsArr), EMBEDDINGS_BATCH_SIZE):
         batch_end = batch_start + EMBEDDINGS_BATCH_SIZE
         batch = stringsArr[batch_start:batch_end]
-
-        print(f"\tBatch {batch_start} to {batch_end - 1}")
 
         response = client.embeddings.create(
             model=EMBEDDINGS_MODEL,

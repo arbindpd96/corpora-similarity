@@ -24,7 +24,7 @@ def getEmbeddings(stringsArr: list):
     client = OpenAI()
     embeddings = []
 
-    print("Creating embeddings...")
+    print("Creating embeddings_methods...")
     print(f"Total strings: {len(stringsArr)}")
 
     for batch_start in range(0, len(stringsArr), EMBEDDINGS_BATCH_SIZE):
@@ -97,7 +97,7 @@ def generate_embeddings(db_file) -> None:
     }
 
     df = pd.DataFrame(proccessed_embeddings)
-    df.to_csv("./data/embeddings.csv", index=False)
+    df.to_csv("./data/embeddings_methods.csv", index=False)
 
 
 if __name__ == "__main__":
