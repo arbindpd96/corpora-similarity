@@ -1,4 +1,5 @@
 import csv
+import os
 from datetime import datetime
 
 from matplotlib import pyplot as plt
@@ -15,7 +16,8 @@ class ExperimentManager:
     def __init__(self):
         self.experiments = {}
         self.results = {}
-        self.plots = {}
+        self.real_plots = {}
+        self.scripted_plots = {}
 
     def add_experiment(self, name, phases_plot1, phases_plot2):
         experiment = Experiment()
@@ -38,7 +40,7 @@ class ExperimentManager:
         """Wraps text to the specified width."""
         return '\n'.join(textwrap.wrap(text, width))
 
-    def create_comparison_table(self, data):
+    def create_comparison_table(self, data, folderName, *args):
         if not isinstance(data, dict):
             raise ValueError("Data must be a dictionary")
 
@@ -47,7 +49,7 @@ class ExperimentManager:
         for experiment in data.values():
             for key in experiment.keys():
                 if key not in row_labels:
-                    row_labels.append(key)  # This preserves the order
+                    row_labels.append(key)
 
         field_names = ['Metrics'] + list(data.keys())
 
@@ -59,11 +61,17 @@ class ExperimentManager:
         table.align = "l"
 
         # Determine which fields may contain long text
-        long_text_fields = {'plot_1', 'plot_2'}
+        long_text_fields = { f"plot_1", f"plot_2", "result_note", "one_liner_prompt"}
 
         # Fill the table with data in the order of row labels
         for label in row_labels:
-            row = [label]
+            if label == "plot_1":
+                lbl_name = f"plot 1({args[0]})"
+            elif label == "plot_2":
+                lbl_name = f"plot 2({args[1]})"
+            else :
+                lbl_name = label
+            row = [lbl_name]
             for experiment_name in field_names[1:]:  # Skip the 'Metrics' label
                 content = data[experiment_name].get(label, "N/A")
                 # Wrap text for specific fields
@@ -73,24 +81,34 @@ class ExperimentManager:
             table.add_row(row)
 
         # Call the function to convert the table to an image
-        self.table_to_image(table)
+        self.table_to_image(table, folderName)
 
         return table
 
-    def load_plots_from_csv(self, csv_file):
+    def load_plots_from_csv(self, csv_file, type):
         with open(csv_file, mode='r', encoding='utf-8') as file:
             reader = csv.DictReader(file)
             for _, row in enumerate(reader):
-                self.plots[row['id']] = row['overview']
+                if type == 'real' :
+                    self.real_plots[row['id']] = row['overview']
+                else :
+                    self.scripted_plots[row['id']] = row['overview']
 
-    def get_plot_by_id(self, plot_id):
-        return self.plots.get(plot_id, None)
+    def get_plot_by_id(self, plot_id, type):
+        return self.real_plots.get(str(plot_id), None) if type == 'real' else self.scripted_plots.get(str(plot_id), None)
 
-    def table_to_image(self, table):
+    def table_to_image(self, table, folderName):
         current_datetime = datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
 
+        # Create the folder path
+        folder_path = f'../../output/{folderName}'
+
+        # Check if the folder exists, if not create it
+        if not os.path.exists(folder_path):
+            os.makedirs(folder_path)
+
         # Incorporate the formatted date and time into the filename
-        image_path = f'output/table_image_{current_datetime}.png'
+        image_path = f'{folder_path}/table_image_{current_datetime}.png'
 
         # Convert table to string and split into lines
         table_str = table.get_string()

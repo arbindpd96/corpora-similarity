@@ -29,7 +29,6 @@ class Experiment:
 
         # Calculate Similarity Percentages
         similarity_processor = SimilarityPercentage()
-        print(f"shape {np.shape(results_plot1['embedding'])}")
         self.results['semantic_similarity'] = similarity_processor.getSemanticSimilarity(
             results_plot1['embedding'], results_plot2['embedding'])
         self.results['sentiment_similarity'] = similarity_processor.getSentimentAnalysis(
@@ -53,7 +52,6 @@ class Experiment:
         return results
 
     def getResults(self):
-        print(self.results)
         structured_data = {
             'plot_1' : self.results["plot_1"],
             'plot_2' : self.results["plot_2"],
